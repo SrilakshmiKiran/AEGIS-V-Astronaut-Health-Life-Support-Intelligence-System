@@ -1,0 +1,381 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidWorkspace(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'astronautId', 'astronautName', 'missionName',
+          'activeScene', 'earthWanConnected', 'dataSourceMode',
+          'optionalLlmEnabled', 'operatorRole', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'astronautId', 'astronautName', 'missionName',
+          'activeScene', 'earthWanConnected', 'dataSourceMode',
+          'optionalLlmEnabled', 'operatorRole', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.astronautId is string && data.astronautId.size() >= 1 && data.astronautId.size() <= 64
+        && data.astronautName is string && data.astronautName.size() >= 1 && data.astronautName.size() <= 100
+        && data.missionName is string && data.missionName.size() >= 1 && data.missionName.size() <= 140
+        && data.activeScene in [
+          'SCENE_1_NORMAL',
+          'SCENE_2_GRADUAL_ANOMALY',
+          'SCENE_3_EXPLAIN',
+          'SCENE_4_EARTH_UNAVAILABLE',
+          'SCENE_5_RESPONSE_FOLLOWUP',
+          'SCENE_6_CONNECTIVITY_RESTORED',
+          'SCENE_7_CONTINUITY_CMO_UNAVAILABLE'
+        ]
+        && data.earthWanConnected is bool
+        && data.dataSourceMode in ['SIMULATED', 'VERIFIED_DEVICE', 'MANUAL_ENTRY', 'IMPORTED_RECORD']
+        && data.optionalLlmEnabled is bool
+        && data.operatorRole in ['CREW_MEDICAL_OFFICER', 'CREW_MEMBER', 'MISSION_OBSERVER']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPrivateInfo(data, userId) {
+      return data.keys().hasAll(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.email is string && data.email.size() <= 200
+        && data.displayName is string && data.displayName.size() <= 120
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidObservation(data, userId, observationId) {
+      return data.keys().hasAll([
+          'ownerId', 'observationId', 'astronautId', 'timestamp', 'parameter',
+          'value', 'unit', 'sourceType', 'deviceId', 'deviceHmacVerified',
+          'infoLabel', 'qualityStatus', 'qualityNotes', 'isQuarantined', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'observationId', 'astronautId', 'timestamp', 'parameter',
+          'value', 'unit', 'sourceType', 'deviceId', 'deviceHmacVerified',
+          'infoLabel', 'qualityStatus', 'qualityNotes', 'isQuarantined', 'phase', 'createdAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.observationId is string && isValidId(data.observationId) && data.observationId == observationId
+        && data.astronautId is string && data.astronautId.size() >= 1 && data.astronautId.size() <= 64
+        && data.timestamp is string && data.timestamp.size() >= 1 && data.timestamp.size() <= 64
+        && data.parameter is string && data.parameter.size() >= 1 && data.parameter.size() <= 64
+        && (data.value == null || data.value is number)
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 32
+        && data.sourceType in ['SIMULATED', 'VERIFIED_DEVICE', 'MANUAL_ENTRY', 'IMPORTED_RECORD']
+        && data.deviceId is string && data.deviceId.size() <= 64
+        && data.deviceHmacVerified is bool
+        && data.infoLabel in ['MEASURED', 'COMPUTED', 'AI_ASSISTED']
+        && data.qualityStatus in ['VALID', 'ESTIMATED', 'MISSING', 'STALE', 'IMPOSSIBLE', 'CORRUPTED']
+        && data.qualityNotes is string && data.qualityNotes.size() <= 400
+        && data.isQuarantined is bool
+        && (!data.keys().hasAny(['phase']) || (data.phase is string && data.phase.size() <= 64))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidIncident(data, userId, incidentId) {
+      return data.keys().hasAll([
+          'ownerId', 'incidentId', 'astronautId', 'title', 'ruleId',
+          'severity', 'state', 'syncStatus', 'record', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'incidentId', 'astronautId', 'title', 'ruleId',
+          'severity', 'state', 'syncStatus', 'record', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.incidentId is string && isValidId(data.incidentId) && data.incidentId == incidentId
+        && data.astronautId is string && data.astronautId.size() >= 1 && data.astronautId.size() <= 64
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 240
+        && data.ruleId is string && data.ruleId.size() >= 1 && data.ruleId.size() <= 64
+        && data.severity in ['HIGH', 'MODERATE', 'ADVISORY']
+        && data.state in [
+          'DETECTED',
+          'REVIEWED',
+          'ACKNOWLEDGED',
+          'RESPONSE_RECORDED',
+          'MONITORING',
+          'CLOSED_RETAINED'
+        ]
+        && data.syncStatus in ['LOCAL_ONLY', 'PENDING', 'SYNCED', 'ERROR']
+        && data.record is map && data.record.keys().size() <= 40
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidConsultation(data, userId, packageId) {
+      return data.keys().hasAll([
+          'ownerId', 'packageId', 'incidentId', 'syncStatus',
+          'markdownReport', 'questions', 'item', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'packageId', 'incidentId', 'syncStatus',
+          'lastAttemptAt', 'errorMessage', 'markdownReport',
+          'questions', 'item', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.packageId is string && isValidId(data.packageId) && data.packageId == packageId
+        && data.incidentId is string && isValidId(data.incidentId)
+        && data.syncStatus in ['LOCAL_ONLY', 'PENDING', 'SYNCED', 'ERROR']
+        && (!data.keys().hasAny(['lastAttemptAt']) || (data.lastAttemptAt is string && data.lastAttemptAt.size() <= 64))
+        && (!data.keys().hasAny(['errorMessage']) || (data.errorMessage is string && data.errorMessage.size() <= 400))
+        && data.markdownReport is string && data.markdownReport.size() <= 16000
+        && data.questions is list && data.questions.size() <= 12
+        && (data.questions.size() == 0 || data.questions[0] is string)
+        && data.item is map && data.item.keys().size() <= 25
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSnapshot(data, userId, snapshotId) {
+      return data.keys().hasAll([
+          'ownerId', 'snapshotId', 'filename', 'reason',
+          'observationCount', 'incidentCount', 'reportCount',
+          'checksum', 'createdAtIso', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'snapshotId', 'filename', 'reason',
+          'observationCount', 'incidentCount', 'reportCount',
+          'checksum', 'createdAtIso', 'createdAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.snapshotId is string && isValidId(data.snapshotId) && data.snapshotId == snapshotId
+        && data.filename is string && data.filename.size() >= 1 && data.filename.size() <= 128
+        && data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 200
+        && data.observationCount is number && data.observationCount >= 0
+        && data.incidentCount is number && data.incidentCount >= 0
+        && data.reportCount is number && data.reportCount >= 0
+        && data.checksum is string && data.checksum.size() >= 1 && data.checksum.size() <= 128
+        && data.createdAtIso is string && data.createdAtIso.size() >= 1 && data.createdAtIso.size() <= 64
+        && data.createdAt is timestamp;
+    }
+
+    function isValidOpsState(data, userId) {
+      return data.keys().hasAll([
+          'ownerId', 'activityMode', 'activeCrewId', 'lightDelayMode',
+          'cumulativeRadiationMsv', 'solarStormActive', 'eclss', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'activityMode', 'activeCrewId', 'lightDelayMode',
+          'cumulativeRadiationMsv', 'solarStormActive', 'eclss', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.activityMode in ['RESTING', 'SLEEPING', 'EXERCISE_ARED', 'EVA', 'DOCKING']
+        && data.activeCrewId is string && isValidId(data.activeCrewId) && data.activeCrewId.size() <= 64
+        && data.lightDelayMode in ['LEO_0S', 'LUNAR_3S', 'MARS_14M']
+        && data.cumulativeRadiationMsv is number && data.cumulativeRadiationMsv >= 0
+        && data.solarStormActive is bool
+        && data.eclss is map && data.eclss.keys().size() <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidOpsRecord(data, userId, recordId) {
+      return data.keys().hasAll([
+          'ownerId', 'recordId', 'recordType', 'crewId',
+          'title', 'status', 'timestampIso', 'payload', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'recordId', 'recordType', 'crewId',
+          'title', 'status', 'timestampIso', 'payload', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && isValidId(data.ownerId) && data.ownerId == userId
+        && data.recordId is string && isValidId(data.recordId) && data.recordId == recordId
+        && data.recordType in [
+          'CREW_PROFILE',
+          'MED_LOG',
+          'EVA_SESSION',
+          'PVT_COGNITIVE',
+          'CONSULT_MSG',
+          'CHECKLIST_LOG',
+          'VOICE_MEMO',
+          'BIO_EXTENDED',
+          'GAMIFICATION_ROUTINE'
+        ]
+        && data.crewId is string && data.crewId.size() >= 1 && data.crewId.size() <= 64
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.status is string && data.status.size() >= 1 && data.status.size() <= 64
+        && data.timestampIso is string && data.timestampIso.size() >= 1 && data.timestampIso.size() <= 64
+        && data.payload is map && data.payload.keys().size() <= 30
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 4. Collection Match Blocks
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidWorkspace(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidWorkspace(incoming(), userId)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'astronautName', 'missionName', 'activeScene', 'earthWanConnected',
+          'dataSourceMode', 'optionalLlmEnabled', 'operatorRole', 'updatedAt'
+        ]);
+      allow delete: if false;
+
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && docId == 'info' && isOwner(userId);
+        allow list: if false;
+        allow create: if isValidId(userId) && isValidId(docId) && docId == 'info'
+          && isOwner(userId)
+          && isValidPrivateInfo(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(docId) && docId == 'info'
+          && isOwner(userId)
+          && isValidPrivateInfo(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /observations/{observationId} {
+        allow get: if isValidId(userId) && isValidId(observationId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(observationId)
+          && isOwner(userId)
+          && isValidObservation(incoming(), userId, observationId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(observationId) && isOwner(userId);
+      }
+
+      match /incidents/{incidentId} {
+        allow get: if isValidId(userId) && isValidId(incidentId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(incidentId)
+          && isOwner(userId)
+          && isValidIncident(incoming(), userId, incidentId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(incidentId)
+          && isOwner(userId)
+          && existing().state != 'CLOSED_RETAINED'
+          && isValidIncident(incoming(), userId, incidentId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().incidentId == existing().incidentId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['state', 'syncStatus', 'record', 'updatedAt'])
+          );
+        allow delete: if isValidId(userId) && isValidId(incidentId) && isOwner(userId);
+      }
+
+      match /consultations/{packageId} {
+        allow get: if isValidId(userId) && isValidId(packageId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(packageId)
+          && isOwner(userId)
+          && isValidConsultation(incoming(), userId, packageId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(packageId)
+          && isOwner(userId)
+          && isValidConsultation(incoming(), userId, packageId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().packageId == existing().packageId
+          && incoming().incidentId == existing().incidentId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['syncStatus', 'lastAttemptAt', 'errorMessage', 'item', 'updatedAt']) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['syncStatus', 'markdownReport', 'questions', 'item', 'updatedAt'])
+          );
+        allow delete: if isValidId(userId) && isValidId(packageId) && isOwner(userId);
+      }
+
+      match /snapshots/{snapshotId} {
+        allow get: if isValidId(userId) && isValidId(snapshotId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(snapshotId)
+          && isOwner(userId)
+          && isValidSnapshot(incoming(), userId, snapshotId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(snapshotId) && isOwner(userId);
+      }
+
+      match /opsState/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && docId == 'current' && isOwner(userId);
+        allow list: if false;
+        allow create: if isValidId(userId) && isValidId(docId) && docId == 'current'
+          && isOwner(userId)
+          && isValidOpsState(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(docId) && docId == 'current'
+          && isOwner(userId)
+          && isValidOpsState(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'activityMode', 'activeCrewId', 'lightDelayMode',
+            'cumulativeRadiationMsv', 'solarStormActive', 'eclss', 'updatedAt'
+          ]);
+        allow delete: if false;
+      }
+
+      match /opsRecords/{recordId} {
+        allow get: if isValidId(userId) && isValidId(recordId) && isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(recordId)
+          && isOwner(userId)
+          && isValidOpsRecord(incoming(), userId, recordId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(recordId)
+          && isOwner(userId)
+          && isValidOpsRecord(incoming(), userId, recordId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().recordId == existing().recordId
+          && incoming().recordType == existing().recordType
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'status', 'payload', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(recordId) && isOwner(userId);
+      }
+    }
+  }
+}

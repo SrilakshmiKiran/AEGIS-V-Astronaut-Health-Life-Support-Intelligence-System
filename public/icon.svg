@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="aegis-sky-bg" x1="48" y1="36" x2="464" y2="476" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f8fcff" />
+      <stop offset="55%" stop-color="#e4f1fc" />
+      <stop offset="100%" stop-color="#cbe4fa" />
+    </linearGradient>
+    <linearGradient id="aegis-orbit-grad" x1="110" y1="380" x2="402" y2="132" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f294d" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="aegis-ring-grad" x1="160" y1="180" x2="352" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+
+  <!-- Soft Sky Rounded Icon Tile -->
+  <rect x="20" y="20" width="472" height="472" rx="112" fill="url(#aegis-sky-bg)" />
+  <rect x="20" y="20" width="472" height="472" rx="112" stroke="#bae6fd" stroke-width="10" />
+
+  <!-- Outer Orbital Habitat Dome Arc -->
+  <path
+    d="M 134 256 A 122 122 0 1 1 374 226"
+    stroke="#0c234b"
+    stroke-width="24"
+    stroke-linecap="round"
+  />
+
+  <!-- Inner Physiological Telemetry Ring -->
+  <circle
+    cx="256"
+    cy="282"
+    r="86"
+    stroke="url(#aegis-ring-grad)"
+    stroke-width="20"
+  />
+
+  <!-- Sweeping Orbital Trajectory Ring -->
+  <path
+    d="M 118 352 C 92 316, 152 246, 240 190 C 328 134, 394 114, 412 142 C 426 164, 384 222, 314 274"
+    stroke="url(#aegis-orbit-grad)"
+    stroke-width="20"
+    stroke-linecap="round"
+  />
+
+  <!-- Clear Horizontal Pulse Band Backdrop for High-Contrast ECG Separation -->
+  <path
+    d="M 106 268 H 188 L 210 232 L 236 322 L 260 198 L 286 306 L 308 250 L 326 268 H 406"
+    stroke="#e8f3fc"
+    stroke-width="34"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Crisp Biomedical ECG Pulse Waveform -->
+  <path
+    d="M 112 268 H 188 L 210 232 L 236 322 L 260 198 L 286 306 L 308 250 L 326 268 H 400"
+    stroke="#0c234b"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Orbital Satellite Beacon Dot -->
+  <circle cx="388" cy="146" r="16" fill="#0ea5e9" stroke="#f8fcff" stroke-width="6" />
+</svg>

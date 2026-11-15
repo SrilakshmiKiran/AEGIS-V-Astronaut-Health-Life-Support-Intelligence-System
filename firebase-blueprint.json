@@ -1,0 +1,554 @@
+{
+  "entities": {
+    "UserWorkspace": {
+      "title": "UserWorkspace",
+      "description": "Private crew health workspace configuration and mission state owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the workspace owner."
+        },
+        "astronautId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "astronautName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "missionName": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "activeScene": {
+          "type": "string",
+          "enum": [
+            "SCENE_1_NORMAL",
+            "SCENE_2_GRADUAL_ANOMALY",
+            "SCENE_3_EXPLAIN",
+            "SCENE_4_EARTH_UNAVAILABLE",
+            "SCENE_5_RESPONSE_FOLLOWUP",
+            "SCENE_6_CONNECTIVITY_RESTORED",
+            "SCENE_7_CONTINUITY_CMO_UNAVAILABLE"
+          ],
+          "maxLength": 64
+        },
+        "earthWanConnected": {
+          "type": "boolean"
+        },
+        "dataSourceMode": {
+          "type": "string",
+          "enum": ["SIMULATED", "VERIFIED_DEVICE", "MANUAL_ENTRY", "IMPORTED_RECORD"],
+          "maxLength": 32
+        },
+        "optionalLlmEnabled": {
+          "type": "boolean"
+        },
+        "operatorRole": {
+          "type": "string",
+          "enum": ["CREW_MEDICAL_OFFICER", "CREW_MEMBER", "MISSION_OBSERVER"],
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "astronautId",
+        "astronautName",
+        "missionName",
+        "activeScene",
+        "earthWanConnected",
+        "dataSourceMode",
+        "optionalLlmEnabled",
+        "operatorRole",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII document containing the authenticated user's email and display name.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "ObservationDoc": {
+      "title": "ObservationDoc",
+      "description": "Persisted physiological or habitat environmental reading.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "observationId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "astronautId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "timestamp": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "parameter": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": ["SIMULATED", "VERIFIED_DEVICE", "MANUAL_ENTRY", "IMPORTED_RECORD"],
+          "maxLength": 32
+        },
+        "deviceId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "deviceHmacVerified": {
+          "type": "boolean"
+        },
+        "infoLabel": {
+          "type": "string",
+          "enum": ["MEASURED", "COMPUTED", "AI_ASSISTED"],
+          "maxLength": 24
+        },
+        "qualityStatus": {
+          "type": "string",
+          "enum": ["VALID", "ESTIMATED", "MISSING", "STALE", "IMPOSSIBLE", "CORRUPTED"],
+          "maxLength": 24
+        },
+        "qualityNotes": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "isQuarantined": {
+          "type": "boolean"
+        },
+        "phase": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "observationId",
+        "astronautId",
+        "timestamp",
+        "parameter",
+        "unit",
+        "sourceType",
+        "deviceId",
+        "deviceHmacVerified",
+        "infoLabel",
+        "qualityStatus",
+        "qualityNotes",
+        "isQuarantined",
+        "createdAt"
+      ]
+    },
+    "IncidentDoc": {
+      "title": "IncidentDoc",
+      "description": "Persisted alert incident, evidence explanation, response workflow state, and audit trail.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "incidentId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "astronautId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "ruleId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["HIGH", "MODERATE", "ADVISORY"],
+          "maxLength": 24
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "DETECTED",
+            "REVIEWED",
+            "ACKNOWLEDGED",
+            "RESPONSE_RECORDED",
+            "MONITORING",
+            "CLOSED_RETAINED"
+          ],
+          "maxLength": 32
+        },
+        "syncStatus": {
+          "type": "string",
+          "enum": ["LOCAL_ONLY", "PENDING", "SYNCED", "ERROR"],
+          "maxLength": 24
+        },
+        "record": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "incidentId",
+        "astronautId",
+        "title",
+        "ruleId",
+        "severity",
+        "state",
+        "syncStatus",
+        "record",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ConsultationDoc": {
+      "title": "ConsultationDoc",
+      "description": "Persisted flight-surgeon consultation report and Earth sync queue state.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "packageId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "incidentId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "syncStatus": {
+          "type": "string",
+          "enum": ["LOCAL_ONLY", "PENDING", "SYNCED", "ERROR"],
+          "maxLength": 24
+        },
+        "lastAttemptAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "errorMessage": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "markdownReport": {
+          "type": "string",
+          "maxLength": 16000
+        },
+        "questions": {
+          "type": "array"
+        },
+        "item": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "packageId",
+        "incidentId",
+        "syncStatus",
+        "markdownReport",
+        "questions",
+        "item",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SnapshotDoc": {
+      "title": "SnapshotDoc",
+      "description": "Persisted workspace backup snapshot metadata.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "snapshotId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "filename": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "observationCount": {
+          "type": "number"
+        },
+        "incidentCount": {
+          "type": "number"
+        },
+        "reportCount": {
+          "type": "number"
+        },
+        "checksum": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAtIso": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "snapshotId",
+        "filename",
+        "reason",
+        "observationCount",
+        "incidentCount",
+        "reportCount",
+        "checksum",
+        "createdAtIso",
+        "createdAt"
+      ]
+    },
+    "OpsStateDoc": {
+      "title": "OpsStateDoc",
+      "description": "Operational mission context state including activity mode, active crew member, light-delay mode, cumulative radiation dose, solar storm flag, and full ECLSS cabin snapshot.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "activityMode": {
+          "type": "string",
+          "enum": ["RESTING", "SLEEPING", "EXERCISE_ARED", "EVA", "DOCKING"],
+          "maxLength": 32
+        },
+        "activeCrewId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 64
+        },
+        "lightDelayMode": {
+          "type": "string",
+          "enum": ["LEO_0S", "LUNAR_3S", "MARS_14M"],
+          "maxLength": 24
+        },
+        "cumulativeRadiationMsv": {
+          "type": "number"
+        },
+        "solarStormActive": {
+          "type": "boolean"
+        },
+        "eclss": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "activityMode",
+        "activeCrewId",
+        "lightDelayMode",
+        "cumulativeRadiationMsv",
+        "solarStormActive",
+        "eclss",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OpsRecordDoc": {
+      "title": "OpsRecordDoc",
+      "description": "User-scoped mission operations record for crew roster, EVA logs, medication/inventory, cognitive PVT/mood, checklists, and consultation messages/attachments.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "recordId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "recordType": {
+          "type": "string",
+          "enum": [
+            "CREW_PROFILE",
+            "MED_LOG",
+            "EVA_SESSION",
+            "PVT_COGNITIVE",
+            "CONSULT_MSG",
+            "CHECKLIST_LOG",
+            "VOICE_MEMO",
+            "BIO_EXTENDED",
+            "GAMIFICATION_ROUTINE"
+          ],
+          "maxLength": 32
+        },
+        "crewId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "status": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "timestampIso": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "payload": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "recordId",
+        "recordType",
+        "crewId",
+        "title",
+        "status",
+        "timestampIso",
+        "payload",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserWorkspace" },
+      "description": "Private crew health workspace state per authenticated user."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII subcollection (email/display name) accessible only to the owning user."
+    },
+    "/users/{userId}/observations/{observationId}": {
+      "schema": { "$ref": "#/entities/ObservationDoc" },
+      "description": "User-scoped telemetry and manual check-in observations."
+    },
+    "/users/{userId}/incidents/{incidentId}": {
+      "schema": { "$ref": "#/entities/IncidentDoc" },
+      "description": "User-scoped alert incidents and audit records."
+    },
+    "/users/{userId}/consultations/{packageId}": {
+      "schema": { "$ref": "#/entities/ConsultationDoc" },
+      "description": "User-scoped flight-surgeon reports and Earth sync queue."
+    },
+    "/users/{userId}/snapshots/{snapshotId}": {
+      "schema": { "$ref": "#/entities/SnapshotDoc" },
+      "description": "User-scoped cloud storage backup snapshots."
+    },
+    "/users/{userId}/opsState/{docId}": {
+      "schema": { "$ref": "#/entities/OpsStateDoc" },
+      "description": "User-scoped operational mission context (activity mode, active crew, ECLSS, radiation budget)."
+    },
+    "/users/{userId}/opsRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/OpsRecordDoc" },
+      "description": "User-scoped operational records (crew roster, EVA readiness, medication logs, cognitive PVT, checklists, consult messages)."
+    }
+  }
+}

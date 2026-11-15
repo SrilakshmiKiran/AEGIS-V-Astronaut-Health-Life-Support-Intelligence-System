@@ -1,0 +1,11 @@
+{
+  "name": "Remix Remix AEGIS-V: Astronaut Health \u0026 Life Support Monitoring System",
+  "description": "Offline-first astronaut health monitoring and decision-support system for long-duration space missions, tracking personal baselines, anomalies, and evidence-backed incident workflows.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
