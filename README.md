@@ -258,6 +258,18 @@ Potential future development includes:
 - Testing against appropriate datasets and expert-reviewed procedures.
 - Integration with authorised mission systems, subject to validation and certification.
 
+## AI / Super Intelligence Use Disclosure
+
+Generative AI tools were used as development aids during the creation of AEGIS-V, including brainstorming, research assistance, architecture planning, code generation, debugging, documentation, presentation development, and illustrative image generation.
+
+Google Gemini API is integrated into the application to provide AI-assisted explanations, conversational assistance, health summaries, and voice-related functionality.
+
+AI-generated and AI-assisted outputs were reviewed and adapted as part of the team's development process. Deterministic application logic remains separate from AI-generated explanations.
+
+Demonstration telemetry and personal baseline data are synthetic and are not real astronaut medical records.
+
+AI-generated visuals are identified with visible AI-generated labels. AEGIS-V does not use AI-generated outputs as validated medical diagnoses or approved spacecraft safety procedures.  
+
 ## 👥 Team
 
 **Team VITRAXIS**
