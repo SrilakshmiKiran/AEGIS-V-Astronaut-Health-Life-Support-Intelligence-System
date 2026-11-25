@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, CheckCircle2, ClipboardCheck, Lock, MessageSquareHeart, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, Lock, MessageSquareHeart, ShieldAlert } from "lucide-react";
 import {
   ALL_18_PARAMETERS,
   ActorRole,
@@ -134,6 +134,9 @@ export const DailyCheckinPage: React.FC<DailyCheckinPageProps> = ({
   const [draftsByGroup, setDraftsByGroup] = useState<
     Partial<Record<CheckinGroupId, DraftVoiceMemo>>
   >({});
+  const [openForms, setOpenForms] = useState(true);
+  const [openVoiceAndScans, setOpenVoiceAndScans] = useState(false);
+  const [openMetricsTable, setOpenMetricsTable] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -322,6 +325,38 @@ export const DailyCheckinPage: React.FC<DailyCheckinPageProps> = ({
         </div>
       )}
 
+      {/* Progressive Section Controls */}
+      <div className="glass-subtle rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span className="font-medium text-slate-700">
+          Section View: Quick self-report &amp; check-in forms are expanded; extended bio, scans &amp;
+          18-metric table collapse cleanly.
+        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setOpenForms(true);
+              setOpenVoiceAndScans(true);
+              setOpenMetricsTable(true);
+            }}
+            className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-800 cursor-pointer"
+          >
+            Expand All Sections
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpenForms(false);
+              setOpenVoiceAndScans(false);
+              setOpenMetricsTable(false);
+            }}
+            className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-700 cursor-pointer"
+          >
+            Compact View
+          </button>
+        </div>
+      </div>
+
       {/* Quick Optional Subjective Crew Check-In (Clearly Separated from Sensor Telemetry) */}
       <section
         aria-label="Subjective Crew Check-In"
@@ -453,7 +488,29 @@ export const DailyCheckinPage: React.FC<DailyCheckinPageProps> = ({
         )}
       </section>
 
-      {/* 3 Daily Check-In Forms */}
+      {/* Section 2 (Collapsible): 3 Daily Check-In Forms */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setOpenForms(!openForms)}
+          className="w-full glass-panel rounded-2xl px-5 py-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-white/85 transition-colors"
+        >
+          <div>
+            <div className="text-sm font-semibold text-slate-900">
+              2. Daily Quantitative Check-In Forms (Sleep, Eye/Fluid-Shift, Nutrition)
+            </div>
+            <div className="text-xs text-slate-500">
+              Log numerical check-in metrics or attach inline voice observations.
+            </div>
+          </div>
+          {openForms ? (
+            <ChevronUp className="w-4 h-4 text-slate-600 shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-600 shrink-0" />
+          )}
+        </button>
+
+      {openForms && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Form 1: Sleep & Energy */}
         <form
@@ -791,46 +848,95 @@ export const DailyCheckinPage: React.FC<DailyCheckinPageProps> = ({
           </div>
         </form>
       </div>
+      )}
+      </div>
 
-      {/* Daily Observation Voice Memos Recorder & Saved Snippets */}
-      <DailyVoiceMemoPanel
-        storedMemos={storedMemos}
-        cloudMemoRecords={cloudMemoRecords}
-        activeRecordingGroup={activeRecordingGroup}
-        recordingSeconds={recordingSeconds}
-        standaloneDraft={draftsByGroup.GENERAL_CHECKIN || null}
-        micError={micError}
-        isBusy={isBusy}
-        onStartRecording={handleStartRecording}
-        onStopRecording={handleStopRecording}
-        onClearDraft={clearDraft}
-        onSaveStandaloneMemo={async (note, parameterLabel) => {
-          const draft = draftsByGroup.GENERAL_CHECKIN;
-          if (!draft) return;
-          await onSaveVoiceMemo({
-            group: "GENERAL_CHECKIN",
-            parameterLabel,
-            blob: draft.blob,
-            mimeType: draft.mimeType,
-            durationSec: draft.durationSec,
-            note,
-          });
-          clearDraft("GENERAL_CHECKIN");
-        }}
-        onDeleteSavedMemo={onDeleteVoiceMemo}
-      />
+      {/* Section 3 (Collapsible): Voice Memos, Glucose, Core Temp & Diagnostic Scans */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setOpenVoiceAndScans(!openVoiceAndScans)}
+          className="w-full glass-panel rounded-2xl px-5 py-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-white/85 transition-colors"
+        >
+          <div>
+            <div className="text-sm font-semibold text-slate-900">
+              3. Extended Biometrics, Voice Memos &amp; Ultrasound/Camera Scans ({storedMemos.length} memos · {storedScans.length} scans)
+            </div>
+            <div className="text-xs text-slate-500">
+              Record standalone audio observations, blood glucose (mg/dL), core body temp (°C), and diagnostic image captures.
+            </div>
+          </div>
+          {openVoiceAndScans ? (
+            <ChevronUp className="w-4 h-4 text-slate-600 shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-600 shrink-0" />
+          )}
+        </button>
 
-      {/* Blood Sugar, Core Body Temperature & Camera / Ultrasound Scan Capture */}
-      <ExtendedBioScanPanel
-        extendedBio={extendedBio}
-        storedScans={storedScans}
-        isBusy={isBusy}
-        onSaveExtendedBio={onSaveExtendedBio}
-        onSaveDiagnosticScan={onSaveDiagnosticScan}
-        onDeleteDiagnosticScan={onDeleteDiagnosticScan}
-      />
+        {openVoiceAndScans && (
+          <div className="space-y-5">
+            <DailyVoiceMemoPanel
+              storedMemos={storedMemos}
+              cloudMemoRecords={cloudMemoRecords}
+              activeRecordingGroup={activeRecordingGroup}
+              recordingSeconds={recordingSeconds}
+              standaloneDraft={draftsByGroup.GENERAL_CHECKIN || null}
+              micError={micError}
+              isBusy={isBusy}
+              onStartRecording={handleStartRecording}
+              onStopRecording={handleStopRecording}
+              onClearDraft={clearDraft}
+              onSaveStandaloneMemo={async (note, parameterLabel) => {
+                const draft = draftsByGroup.GENERAL_CHECKIN;
+                if (!draft) return;
+                await onSaveVoiceMemo({
+                  group: "GENERAL_CHECKIN",
+                  parameterLabel,
+                  blob: draft.blob,
+                  mimeType: draft.mimeType,
+                  durationSec: draft.durationSec,
+                  note,
+                });
+                clearDraft("GENERAL_CHECKIN");
+              }}
+              onDeleteSavedMemo={onDeleteVoiceMemo}
+            />
 
-      {/* All 18 Parameters Table */}
+            <ExtendedBioScanPanel
+              extendedBio={extendedBio}
+              storedScans={storedScans}
+              isBusy={isBusy}
+              onSaveExtendedBio={onSaveExtendedBio}
+              onSaveDiagnosticScan={onSaveDiagnosticScan}
+              onDeleteDiagnosticScan={onDeleteDiagnosticScan}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Section 4 (Collapsible): All 18 Parameters Table */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setOpenMetricsTable(!openMetricsTable)}
+          className="w-full glass-panel rounded-2xl px-5 py-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-white/85 transition-colors"
+        >
+          <div>
+            <div className="text-sm font-semibold text-slate-900">
+              4. All 18 Tracked Parameters vs. 14-Day Personal Baseline (Last-Valid &amp; Δ Table)
+            </div>
+            <div className="text-xs text-slate-500">
+              Inspect freshness, last-valid timestamps, baseline P05–P95 bands, and prior-reading deltas.
+            </div>
+          </div>
+          {openMetricsTable ? (
+            <ChevronUp className="w-4 h-4 text-slate-600 shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-600 shrink-0" />
+          )}
+        </button>
+
+      {openMetricsTable && (
       <div className="glass-panel rounded-2xl p-6 space-y-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">
@@ -930,6 +1036,8 @@ export const DailyCheckinPage: React.FC<DailyCheckinPageProps> = ({
             </tbody>
           </table>
         </div>
+      </div>
+      )}
       </div>
 
       <CuratedReferencesStrip

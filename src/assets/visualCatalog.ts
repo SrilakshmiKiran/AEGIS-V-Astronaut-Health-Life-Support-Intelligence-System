@@ -14,9 +14,11 @@ import medicalHelpImg from "./images/card_medical_help_1794732114930.jpg";
 import continuityModeImg from "./images/card_continuity_mode_1794732116962.jpg";
 import lifeSafetyImg from "./images/card_life_safety_1794732116711.jpg";
 import shiftRoutineImg from "./images/card_shift_routine_1794732114434.jpg";
+import gatewayHeroImg from "./images/hero_gateway_cupola_1794736738621.jpg";
 
 export const VISUAL_ASSETS = {
   heroOrbital: heroOrbitalImg,
+  gatewayHero: gatewayHeroImg,
   cardVitals: cardVitalsImg,
   cardEarth: cardEarthImg,
   envHabitat: envHabitatImg,

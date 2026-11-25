@@ -527,7 +527,7 @@ export const HealthIntelligencePage: React.FC<HealthIntelligencePageProps> = ({
                   <ClipboardCheck className="w-4 h-4 text-cyan-400" />
                   <span>Fluid-Shift &amp; Tonometry Check-In</span>
                 </h4>
-                <span className="text-[11px] font-mono text-amber-300">CMO + PIN 2026 Required</span>
+                <span className="text-[11px] font-mono text-amber-300">CMO + PIN Required</span>
               </div>
 
               <div className="space-y-2.5 text-xs">

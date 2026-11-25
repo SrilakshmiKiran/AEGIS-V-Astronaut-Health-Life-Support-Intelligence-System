@@ -124,7 +124,7 @@ export const DemoWalkthroughBar: React.FC<DemoWalkthroughBarProps> = ({
                 {scene.requiresCmoPin && (
                   <div className="text-[10px] font-mono text-amber-400/90 mt-0.5 flex items-center gap-1">
                     <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
-                    <span>Requires CMO + PIN 2026</span>
+                    <span>Requires CMO + PIN Auth</span>
                   </div>
                 )}
               </button>

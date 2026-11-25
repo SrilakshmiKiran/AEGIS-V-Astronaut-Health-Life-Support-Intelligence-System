@@ -989,11 +989,16 @@ export const ReportsLibraryPage: React.FC<ReportsLibraryPageProps> = ({
       <div className="space-y-4 pt-2">
         <div className="glass-panel rounded-2xl p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-sky-700" />
-              <h2 className="text-base font-semibold text-slate-900">
-                Offline Space Health Reference Library ({resources.length} NASA &amp; CSA Guides)
-              </h2>
+            <div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-sky-700" />
+                <h2 className="text-base font-semibold text-slate-900">
+                  Offline Space Health Reference Library ({resources.length} NASA &amp; CSA Guides)
+                </h2>
+              </div>
+              <p className="text-xs text-slate-600 mt-1">
+                Research &amp; Educational Literature Only — separate from approved onboard emergency and clinical procedures.
+              </p>
             </div>
             {!earthWanConnected && (
               <span className="text-xs text-amber-700 font-medium inline-flex items-center gap-1">

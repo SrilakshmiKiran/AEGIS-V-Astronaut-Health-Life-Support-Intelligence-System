@@ -418,13 +418,13 @@ export const AlertIncidentDetailPage: React.FC<AlertIncidentDetailPageProps> = (
               </button>
             </div>
 
-            {/* Step 2 -> 3: Acknowledge (Requires CMO + PIN 2026) */}
+            {/* Step 2 -> 3: Acknowledge (Requires CMO + PIN) */}
             <div className="space-y-2 border-b border-slate-800 pb-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-300 font-medium">
                   Step 2: CMO Acknowledgment (REVIEWED → ACKNOWLEDGED)
                 </span>
-                <span className="font-mono text-[11px] text-amber-300">CMO + PIN 2026</span>
+                <span className="font-mono text-[11px] text-amber-300">CMO + PIN</span>
               </div>
               <button
                 type="button"
@@ -441,7 +441,7 @@ export const AlertIncidentDetailPage: React.FC<AlertIncidentDetailPageProps> = (
                 <span className="text-slate-300 font-medium">
                   Step 3: Record Response (→ RESPONSE_RECORDED → MONITORING)
                 </span>
-                <span className="font-mono text-[11px] text-amber-300">CMO + PIN 2026</span>
+                <span className="font-mono text-[11px] text-amber-300">CMO + PIN</span>
               </div>
 
               <div>
@@ -498,7 +498,7 @@ export const AlertIncidentDetailPage: React.FC<AlertIncidentDetailPageProps> = (
                 <span className="text-slate-300 font-medium">
                   Step 4: Close &amp; Retain in Archive (→ CLOSED_RETAINED)
                 </span>
-                <span className="font-mono text-[11px] text-amber-300">CMO + PIN 2026</span>
+                <span className="font-mono text-[11px] text-amber-300">CMO + PIN</span>
               </div>
               <input
                 aria-label="Incident Closure Notes"

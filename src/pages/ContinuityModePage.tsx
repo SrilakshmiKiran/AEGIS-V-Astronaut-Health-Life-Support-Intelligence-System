@@ -113,61 +113,61 @@ const CONTINUITY_STORY_STEPS: Array<{
   {
     step: 1,
     title: "Incident Detected",
-    summary: "INC-DEMO-001 triggered (SpO2 92.4%, Cabin CO2 5.4 mmHg); evidence preserved.",
+    summary: "Telemetry drift detected (e.g., SpO2 92.4%, Cabin CO2 5.4 mmHg); evidence preserved.",
     sectionId: "continuity-incident-context",
   },
   {
     step: 2,
-    title: "Earth Comms Unavailable",
-    summary: "Deep-space Earth WAN link severed; onboard operations remain functional offline.",
+    title: "Earth Comms Check",
+    summary: "Deep-space Earth WAN status verified; local operations remain active offline.",
     sectionId: "continuity-controls",
   },
   {
     step: 3,
-    title: "CMO Marked Unavailable",
-    summary: "Designated CMO (Dr. Aris Chen) unavailable; CMO+PIN clinical gates remain locked.",
+    title: "CMO Check",
+    summary: "Designated Crew Medical Officer availability checked; CMO-gated controls stay locked when off-duty.",
     sectionId: "continuity-controls",
   },
   {
     step: 4,
-    title: "Replacement Operator Active",
-    summary: "Cdr. Elena Vance (CREW_MEMBER) operates simplified Continuity view with clear role bounds.",
+    title: "Backup Identified",
+    summary: "Replacement crew operator assigned with explicit training scope and permission bounds.",
     sectionId: "continuity-crew-board",
   },
   {
     step: 5,
-    title: "Mission Support Status",
-    summary: "Deterministic view of what is available, missing, and uncertain — no fake % scores.",
-    sectionId: "continuity-support-status",
-  },
-  {
-    step: 6,
-    title: "Medical Resource Readiness",
-    summary: "Verify live Med Kit stock, equipment status, and missing Capnography gap.",
+    title: "Equipment Checked",
+    summary: "Onboard hardware operational state, Med Kit consumables, and missing capnography gap verified.",
     sectionId: "continuity-resources",
   },
   {
+    step: 6,
+    title: "Approved Guidance",
+    summary: "Offline static procedure catalog filtered to authorized non-CMO checklists only.",
+    sectionId: "continuity-procedures",
+  },
+  {
     step: 7,
-    title: "Guided Procedure Stepper",
-    summary: "Search offline catalog and execute authorized PROC-ENV-CO2-01 step-by-step.",
+    title: "Actions Documented",
+    summary: "Step-by-step crew checklist progress and observations logged persistently.",
     sectionId: "continuity-procedures",
   },
   {
     step: 8,
-    title: "Log Checklist & Observations",
-    summary: "Save crew-recorded steps and symptom notes into persistent workspace history.",
-    sectionId: "continuity-procedures",
+    title: "Earth Handoff",
+    summary: "Structured Markdown / JSON handoff package compiled with open questions & limits.",
+    sectionId: "continuity-handoff",
   },
   {
     step: 9,
-    title: "Generate & Export Handoff",
-    summary: "Compile structured Earth Handoff Package (.MD / .JSON) queued locally as PENDING.",
+    title: "Link Restored",
+    summary: "Earth communication channel restored and local IndexedDB queue inspected.",
     sectionId: "continuity-handoff",
   },
   {
     step: 10,
-    title: "Restore Link & Sync",
-    summary: "Restore Earth link and flush PENDING handoff package to SYNCED.",
+    title: "Synced",
+    summary: "Buffered handoff package & crew logs flushed from PENDING to SYNCED.",
     sectionId: "continuity-handoff",
   },
 ];
@@ -391,7 +391,7 @@ export const ContinuityModePage: React.FC<ContinuityModePageProps> = ({
     setLocalFeedback({
       ok: true,
       message: nextCmoAvail
-        ? "CMO marked AVAILABLE. Standard CMO role permissions can be used with CMO PIN (2026)."
+        ? "CMO marked AVAILABLE. Standard CMO role permissions can be verified with the CMO authorization PIN."
         : "CMO marked UNAVAILABLE. Active workflow switched to CREW_MEMBER Continuity view; CMO-gated procedures remain locked.",
     });
   };
@@ -736,7 +736,7 @@ export const ContinuityModePage: React.FC<ContinuityModePageProps> = ({
               </span>
             </span>
             <span className="font-mono text-[11px] text-amber-900">
-              CMO+PIN (2026) Gates Remain Enforced
+              CMO+PIN Authorization Gates Remain Enforced
             </span>
           </div>
           <p className="leading-relaxed">
@@ -984,6 +984,47 @@ export const ContinuityModePage: React.FC<ContinuityModePageProps> = ({
             <div className="text-[11px] text-slate-500">Authorized Procedures</div>
             <div className="font-mono font-bold text-slate-900 mt-0.5 tabular-nums">
               {supportStatus.accessibleProcedureCount} Open · {supportStatus.lockedProcedureCount} Locked
+            </div>
+          </div>
+        </div>
+
+        {/* Operational Decision & Comms State Clarity Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px]">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-2.5 py-2">
+            <div className="font-mono font-semibold text-emerald-900">KNOWN</div>
+            <div className="text-emerald-800 mt-0.5">
+              {supportStatus.operationalEquipmentCount} gear ready · {supportStatus.offlineReferenceCount} guides
+            </div>
+          </div>
+          <div className="rounded-lg border border-rose-200 bg-rose-50/70 px-2.5 py-2">
+            <div className="font-mono font-semibold text-rose-900">UNAVAILABLE</div>
+            <div className="text-rose-800 mt-0.5">
+              {supportStatus.cmoStatus === "AVAILABLE" ? "CMO On Duty" : "CMO Off Duty"} ·{" "}
+              {supportStatus.earthCommsStatus === "AVAILABLE" ? "Earth Up" : "Earth Link Down"}
+            </div>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/75 px-2.5 py-2">
+            <div className="font-mono font-semibold text-amber-900">UNRESOLVED</div>
+            <div className="text-amber-900 mt-0.5">
+              {openIncidents.length} open incident{openIncidents.length !== 1 ? "s" : ""}
+            </div>
+          </div>
+          <div className="rounded-lg border border-sky-200 bg-sky-50/75 px-2.5 py-2">
+            <div className="font-mono font-semibold text-sky-900">AUTHORIZED NOW</div>
+            <div className="text-sky-900 mt-0.5">
+              {supportStatus.accessibleProcedureCount} non-CMO checklist(s)
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-white px-2.5 py-2">
+            <div className="font-mono font-semibold text-slate-900">APPROVAL NEEDED</div>
+            <div className="text-slate-700 mt-0.5">
+              {supportStatus.lockedProcedureCount} CMO-gated action(s)
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-300 bg-white px-2.5 py-2">
+            <div className="font-mono font-semibold text-slate-900">WAITING FOR EARTH</div>
+            <div className="text-slate-700 mt-0.5">
+              {handoffQueueItems.filter((h) => h.sync_status !== "SYNCED").length} pending handoff(s)
             </div>
           </div>
         </div>
@@ -1438,7 +1479,7 @@ export const ContinuityModePage: React.FC<ContinuityModePageProps> = ({
                 <p>{selectedProcAuth.reason}</p>
                 <p className="text-[11px] text-rose-800">
                   Security rule: Non-medical crew cannot impersonate the Crew Medical Officer or
-                  unlock CMO-restricted checklists without active CMO credentials and PIN (2026).
+                  unlock CMO-restricted checklists without active CMO credentials and verified PIN.
                 </p>
               </div>
             ) : (

@@ -681,6 +681,104 @@ export const ShiftRoutinePage: React.FC<ShiftRoutinePageProps> = ({
             </div>
           </div>
 
+          {/* Coherent 6-Stage End-to-End Mission Story Walkthrough */}
+          <section className="glass-panel rounded-2xl p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">
+                  6-Stage End-to-End Mission Story Walkthrough (Synthetic &amp; Resettable)
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Demonstrates AEGIS-V coherently from normal orbital ops through anomaly detection,
+                  urgent crew help, CMO incapacity, Earth blackout, recovery, and closure.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => void onActivateScene("SCENE_1_NORMAL")}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 cursor-pointer"
+              >
+                Reset Story to Stage 1
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              {(
+                [
+                  {
+                    stage: "Stage 1 · Normal Operations",
+                    detail: "All 18 personal-baseline channels nominal; sensors verified.",
+                    actionLabel: "Load & View Live Vitals →",
+                    scene: "SCENE_1_NORMAL" as DemoSceneId,
+                    target: "live-vitals" as PageId,
+                  },
+                  {
+                    stage: "Stage 2 · Anomaly Detected",
+                    detail: "Cabin CO2 rises, SpO2 dips, faulty spike isolated, 7-part alert ready.",
+                    actionLabel: "Load & Inspect Evidence →",
+                    scene: "SCENE_2_GRADUAL_ANOMALY" as DemoSceneId,
+                    target: "alerts-response" as PageId,
+                  },
+                  {
+                    stage: "Stage 3 · Astronaut Needs Medical Help",
+                    detail: "Launch one-tap triage guidance, red-flag checks & kit locator.",
+                    actionLabel: "Open Medical Help →",
+                    scene: "SCENE_3_EXPLAIN" as DemoSceneId,
+                    target: "medical-help" as PageId,
+                  },
+                  {
+                    stage: "Stage 4 · CMO Unavailable",
+                    detail: "CMO marked off clinical duty; non-CMO Continuity Mode active.",
+                    actionLabel: "Activate Continuity Mode →",
+                    scene: "SCENE_7_CONTINUITY_CMO_UNAVAILABLE" as DemoSceneId,
+                    target: "continuity" as PageId,
+                  },
+                  {
+                    stage: "Stage 5 · Earth Comms Lost",
+                    detail: "Deep-space link severed; offline guides & local IndexedDB active.",
+                    actionLabel: "Simulate Earth Blackout →",
+                    scene: "SCENE_4_EARTH_UNAVAILABLE" as DemoSceneId,
+                    target: "reports-library" as PageId,
+                  },
+                  {
+                    stage: "Stage 6 · Follow-Up, Recovery & Handoff",
+                    detail: "Record action, review post-action direction & inspect handover.",
+                    actionLabel: "Load Recovery & Handover →",
+                    scene: "SCENE_5_RESPONSE_FOLLOWUP" as DemoSceneId,
+                    target: "alerts-response" as PageId,
+                  },
+                ]
+              ).map((item) => {
+                const active = activeScene === item.scene;
+                return (
+                  <div
+                    key={item.stage}
+                    className={`rounded-xl border p-3.5 flex flex-col justify-between gap-2.5 ${
+                      active ? "bg-sky-50/90 border-sky-300" : "bg-white/80 border-slate-200/80"
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold text-slate-900">{item.stage}</div>
+                      <p className="text-[11px] text-slate-600 mt-1">{item.detail}</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={async () => {
+                        await onActivateScene(item.scene);
+                        onNavigate(item.target);
+                      }}
+                      className="w-full py-1.5 px-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-lg text-[11px] font-semibold cursor-pointer"
+                    >
+                      {item.actionLabel}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           {/* 7 Interactive Mission Scenarios */}
           <section className="glass-panel rounded-2xl p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">

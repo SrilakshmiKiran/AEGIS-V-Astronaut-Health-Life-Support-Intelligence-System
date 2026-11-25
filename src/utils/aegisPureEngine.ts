@@ -899,7 +899,7 @@ export function isProcedureAuthorized(
     return {
       allowed: false,
       reason:
-        "Locked: Requires CREW_MEDICAL_OFFICER role and CMO PIN (2026). Replacement crew must use crew-authorized Continuity procedures.",
+        "Locked: Requires CREW_MEDICAL_OFFICER role and verified CMO PIN. Replacement crew must use crew-authorized Continuity procedures.",
     };
   }
   if (!procedure.allowedRoles.includes(role)) {

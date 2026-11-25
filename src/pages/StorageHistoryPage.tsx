@@ -407,7 +407,7 @@ export const StorageHistoryPage: React.FC<StorageHistoryPageProps> = ({
               <div>
                 <div className="font-medium text-slate-900">Workspace Role</div>
                 <div className="text-slate-500">
-                  Medical Officer requires prototype PIN (2026); Observer is read-only.
+                  Medical Officer elevation requires verification PIN; Observer is read-only.
                 </div>
               </div>
               <select
@@ -439,7 +439,7 @@ export const StorageHistoryPage: React.FC<StorageHistoryPageProps> = ({
               <div className="glass-subtle rounded-xl p-3 space-y-2 border border-sky-200">
                 <div className="font-medium text-slate-900 flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-sky-700" />
-                  <span>Enter Prototype CMO PIN (2026) to Elevate Role</span>
+                  <span>Enter CMO Authorization PIN to Elevate Role</span>
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Prototype client workflow gate layered over your Firebase Auth owner-isolated
@@ -451,7 +451,7 @@ export const StorageHistoryPage: React.FC<StorageHistoryPageProps> = ({
                     type="password"
                     value={rolePinInput}
                     onChange={(e) => setRolePinInput(e.target.value)}
-                    placeholder="Enter PIN (2026)"
+                    placeholder="Enter CMO PIN"
                     className="flex-1 min-w-[140px] bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 font-mono text-slate-900"
                   />
                   <button
@@ -459,7 +459,7 @@ export const StorageHistoryPage: React.FC<StorageHistoryPageProps> = ({
                     disabled={isBusy}
                     onClick={async () => {
                       if (rolePinInput.trim() !== "2026") {
-                        setRolePinError("Invalid CMO prototype PIN. Expected '2026'.");
+                        setRolePinError("Invalid CMO authorization PIN.");
                         return;
                       }
                       setPendingCmoElevation(false);

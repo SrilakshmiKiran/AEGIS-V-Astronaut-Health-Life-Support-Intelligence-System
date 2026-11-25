@@ -213,20 +213,81 @@ export const LifeSafetySentinelPage: React.FC<LifeSafetySentinelPageProps> = ({
         </div>
       </div>
 
-      {/* Scientific & Operational Safety Boundary Banner */}
-      <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-xs text-amber-950 space-y-1">
-        <div className="font-mono font-bold uppercase tracking-wide text-[11px]">
-          RESEARCH PROTOTYPE &amp; OPERATIONAL SAFETY BOUNDARY
+      {/* 5-Tier Alert Prioritization & Operational Safety Boundary */}
+      <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-5 text-xs text-amber-950 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="font-mono font-bold uppercase tracking-wide text-[11px]">
+            5-TIER PRIORITY HIERARCHY &amp; OPERATIONAL SAFETY BOUNDARY
+          </div>
+          <span className="font-mono text-[11px] font-semibold">
+            High-priority alerts never silently dismiss or auto-close on recovery
+          </span>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+          {(
+            [
+              {
+                tier: "Emergency",
+                rule: "Active urgent emergency or unacknowledged trauma event",
+                active: openEvents.length > 0,
+              },
+              {
+                tier: "Warning",
+                rule: "Urgent cabin pressure, O2, or smoke hazard",
+                active: openEvents.length === 0 && envAssessment.overallLevel === "URGENT",
+              },
+              {
+                tier: "Caution",
+                rule: "Missed welfare check-in overdue or ECLSS fault",
+                active:
+                  openEvents.length === 0 &&
+                  envAssessment.overallLevel !== "URGENT" &&
+                  (checkinEval.statusCode === "MISSED_OVERDUE" || envAssessment.overallLevel === "FAULT"),
+              },
+              {
+                tier: "Advisory",
+                rule: "Environmental drift or due check-in reminder",
+                active:
+                  openEvents.length === 0 &&
+                  (envAssessment.overallLevel === "ADVISORY" || checkinEval.statusCode === "REMINDER_DUE"),
+              },
+              {
+                tier: "Informational",
+                rule: "All channels nominal within 14-day baseline",
+                active:
+                  openEvents.length === 0 &&
+                  envAssessment.overallLevel === "NOMINAL" &&
+                  checkinEval.statusCode === "ON_SCHEDULE",
+              },
+            ] as Array<{ tier: string; rule: string; active: boolean }>
+          ).map((item) => (
+            <div
+              key={item.tier}
+              className={`rounded-xl border p-2.5 ${
+                item.active
+                  ? "bg-slate-900 border-slate-900 text-white"
+                  : "bg-white/75 border-amber-200/80 text-slate-700"
+              }`}
+            >
+              <div className="font-mono font-bold text-[11px]">
+                {item.active ? `▶ ${item.tier.toUpperCase()}` : item.tier}
+              </div>
+              <div className={`text-[10px] mt-0.5 ${item.active ? "text-slate-300" : "text-slate-600"}`}>
+                {item.rule}
+              </div>
+            </div>
+          ))}
+        </div>
+
         <p className="leading-relaxed">
           AEGIS Life-Safety Sentinel is a decision-support and event-coordination prototype for{" "}
           <strong>
             {astronautName} ({activeCrewId})
           </strong>
-          . It does <strong>not</strong> diagnose medical conditions, prescribe treatment, fabricate
-          sensor channels, autonomously control spacecraft hardware, or transmit a real distress
-          beacon. Emergency events <strong>never auto-close</strong> when readings recover and
-          require explicit human verification.
+          . Verified device channels and synthetic demo data are separated. It does{" "}
+          <strong>not</strong> diagnose conditions, autonomously control spacecraft hardware, or
+          send a real distress signal. Events <strong>never auto-close</strong> when readings recover.
         </p>
       </div>
 

@@ -38,6 +38,16 @@ export const LifeSafetyBanner: React.FC<LifeSafetyBannerProps> = ({
   const isEnvWarn =
     envAssessment.overallLevel === "ADVISORY" || envAssessment.overallLevel === "FAULT";
 
+  const priorityTier = hasOpenEmergency
+    ? "EMERGENCY"
+    : isEnvUrgent
+    ? "WARNING"
+    : isOverdue || isEnvWarn
+    ? "CAUTION"
+    : isDueReminder
+    ? "ADVISORY"
+    : "INFORMATIONAL";
+
   const toneCls =
     hasOpenEmergency || isEnvUrgent
       ? "bg-rose-50/95 border-rose-300 text-rose-950"
@@ -57,7 +67,7 @@ export const LifeSafetyBanner: React.FC<LifeSafetyBannerProps> = ({
             ) : (
               <Clock className="w-3.5 h-3.5 text-sky-700 shrink-0" />
             )}
-            <span>AEGIS LIFE-SAFETY SENTINEL</span>
+            <span>SENTINEL · {priorityTier}</span>
           </span>
 
           <span className="text-slate-300 hidden sm:inline" aria-hidden="true">
@@ -66,10 +76,10 @@ export const LifeSafetyBanner: React.FC<LifeSafetyBannerProps> = ({
 
           <span className="font-medium truncate">
             {hasOpenEmergency
-              ? `${openEvents.length} Active Emergency/Welfare Event (${openEvents[0].state.replace(
+              ? `${openEvents.length} Active Event (${openEvents[0].state.replace(
                   /_/g,
                   " "
-                )})`
+                )} · Explicit Review Required)`
               : isOverdue
               ? checkinEval.headline
               : isEnvUrgent || isEnvWarn

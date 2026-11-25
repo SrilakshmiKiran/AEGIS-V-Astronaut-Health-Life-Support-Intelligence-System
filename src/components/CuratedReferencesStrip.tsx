@@ -12,7 +12,7 @@ interface CuratedReferencesStripProps {
 
 export const CuratedReferencesStrip: React.FC<CuratedReferencesStripProps> = ({
   title,
-  subtitle = "Verified NASA & CSA spaceflight research references linked to these measurements.",
+  subtitle = "Research & educational literature only (NASA & CSA) — separate from onboard approved response procedures.",
   topicTags,
   maxItems = 3,
 }) => {
@@ -33,7 +33,7 @@ export const CuratedReferencesStrip: React.FC<CuratedReferencesStripProps> = ({
           <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
         </div>
         <span className="text-[11px] font-mono text-slate-500">
-          Offline Curated Library ({matched.length})
+          Research Literature Only ({matched.length})
         </span>
       </div>
 

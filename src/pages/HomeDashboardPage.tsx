@@ -40,7 +40,7 @@ import {
 } from "../types/opsContracts";
 import { VISUAL_ASSETS } from "../assets/visualCatalog";
 import { SafeImage } from "../components/SafeImage";
-import { isObservationDegraded } from "../utils/aegisPureEngine";
+import { formatMissionTimeUtc, isObservationDegraded } from "../utils/aegisPureEngine";
 
 interface HomeDashboardPageProps {
   userEmail: string | null;
@@ -85,11 +85,17 @@ interface HomeDashboardPageProps {
   onNavigate: (page: PageId) => void;
 }
 
-type CardGroupFilter = "ALL" | "SAFETY" | "HEALTH" | "CREW";
+type CardGroupFilter =
+  | "ALL"
+  | "HEALTH_INTELLIGENCE"
+  | "HELP_SAFETY"
+  | "CREW_CONTINUITY"
+  | "EVIDENCE_RESEARCH";
 
 interface DashboardCardItem {
   page: PageId;
   group: Exclude<CardGroupFilter, "ALL">;
+  groupLabel: string;
   order: string;
   category: string;
   title: string;
@@ -163,9 +169,14 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
 
   const overallStatus: {
     label: string;
-    tone: "emerald" | "amber";
+    tone: "emerald" | "amber" | "rose";
   } =
-    totalSavedObservations === 0 || presentCount === 0
+    sentinelSummary && sentinelSummary.openEventsCount > 0
+      ? {
+          label: `${sentinelSummary.openEventsCount} Emergency/Welfare Event`,
+          tone: "rose",
+        }
+      : totalSavedObservations === 0 || presentCount === 0
       ? { label: "Telemetry Missing", tone: "amber" }
       : openIncidents.length > 0
       ? {
@@ -173,7 +184,7 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
           tone: "amber",
         }
       : telemetryIncomplete
-      ? { label: `${presentCount}/${ALL_18_PARAMETERS.length} Valid`, tone: "amber" }
+      ? { label: `${presentCount}/${ALL_18_PARAMETERS.length} Channels Valid`, tone: "amber" }
       : outsideCount > 0
       ? { label: `${outsideCount} Baseline Watch`, tone: "amber" }
       : { label: "All 18 Channels Nominal", tone: "emerald" };
@@ -190,6 +201,14 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
   const pendingReports = consultationQueue.filter((q) => q.sync_status !== "SYNCED").length;
   const outstandingTasksCount = shiftHandover?.outstandingTasks.length || 0;
 
+  const latestObservationIso =
+    shiftHandover?.lastUpdateIso ||
+    ALL_18_PARAMETERS.map((p) => latest.latest_by_parameter[p]?.timestamp)
+      .filter((t): t is string => Boolean(t))
+      .sort()
+      .reverse()[0] ||
+    null;
+
   const envHeroImage =
     routineState.environmentMode === "ISS_LEO"
       ? VISUAL_ASSETS.heroOrbital
@@ -197,12 +216,110 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
       ? VISUAL_ASSETS.cardEarth
       : VISUAL_ASSETS.envHabitat;
 
+  const sentinelTierLabel =
+    sentinelSummary && sentinelSummary.openEventsCount > 0
+      ? "EMERGENCY"
+      : sentinelSummary?.envLevel === "URGENT" || sentinelSummary?.checkinOverdue
+      ? "WARNING"
+      : sentinelSummary?.envLevel === "ADVISORY" || sentinelSummary?.envLevel === "FAULT"
+      ? "CAUTION"
+      : openIncidents.length > 0
+      ? "ADVISORY"
+      : "INFORMATIONAL";
+
   const cards: DashboardCardItem[] = [
-    // Group 1: Safety & Immediate Help
+    // Group A — Health Intelligence
+    {
+      page: "live-vitals",
+      group: "HEALTH_INTELLIGENCE",
+      groupLabel: "Group A · Health Intelligence",
+      order: "01",
+      category: "Continuous Sensors",
+      title: "Live Vitals & Quality Filter",
+      metric: hrComp
+        ? `${hrComp.current_value.toFixed(0)} bpm · ${spo2Comp ? spo2Comp.current_value.toFixed(1) : "—"}% SpO2`
+        : "8 Live Channels",
+      statusText:
+        isolatedCount > 0
+          ? `▲ ${validCount} valid · ${isolatedCount} isolated`
+          : `● ${validCount} valid sensor readings`,
+      tone: isolatedCount > 0 ? "amber" : "emerald",
+      description:
+        "Inspect live 8-channel charts, last-known-good values, and sensor quality flags.",
+      actionLabel: "Open Live Vitals",
+      icon: Activity,
+      imageSrc: VISUAL_ASSETS.liveVitals,
+      imageAlt: "Astronaut biometric chest monitor and pulse oximeter",
+    },
+    {
+      page: "daily-checkin",
+      group: "HEALTH_INTELLIGENCE",
+      groupLabel: "Group A · Health Intelligence",
+      order: "02",
+      category: "Crew Input & Scans",
+      title: "Daily Check-In",
+      metric: sleepComp
+        ? `${sleepComp.current_value.toFixed(1)}h sleep · ${hydrationComp ? hydrationComp.current_value.toFixed(0) : "—"} mL`
+        : "10 Daily Inputs",
+      statusText:
+        outsideCount > 0
+          ? `▲ ${outsideCount} channel${outsideCount > 1 ? "s" : ""} outside baseline`
+          : `● ${presentCount}/${ALL_18_PARAMETERS.length} channels verified`,
+      tone: outsideCount > 0 || telemetryIncomplete ? "amber" : "emerald",
+      description:
+        "Log quick self-report, sleep, hydration, glucose, voice memos, and scans.",
+      actionLabel: "Open Check-In",
+      icon: ClipboardCheck,
+      imageSrc: VISUAL_ASSETS.dailyCheckin,
+      imageAlt: "Portable ultrasound probe, thermometer, and glucose meter",
+    },
+    {
+      page: "cabin-radiation",
+      group: "HEALTH_INTELLIGENCE",
+      groupLabel: "Group A · Health Intelligence",
+      order: "03",
+      category: "Habitat Environment",
+      title: "Cabin Air & Radiation",
+      metric: co2Comp
+        ? `${co2Comp.current_value.toFixed(2)} mmHg CO2 · ${radComp ? radComp.current_value.toFixed(3) : "—"} mSv/hr`
+        : "CO2, Pressure & O2",
+      statusText:
+        co2Comp?.outside_p05_p95_band || radComp?.outside_p05_p95_band
+          ? "▲ Above normal cabin band"
+          : "● Cabin pressure & air nominal",
+      tone:
+        co2Comp?.outside_p05_p95_band || radComp?.outside_p05_p95_band ? "amber" : "emerald",
+      description:
+        "Monitor CO2, cabin pressure, oxygen supply, smoke sensors, and radiation.",
+      actionLabel: "Open Cabin & Air",
+      icon: Wind,
+      imageSrc: VISUAL_ASSETS.cabinEclss,
+      imageAlt: "Space station air-scrubber life support module",
+    },
+    {
+      page: "cognitive-readiness",
+      group: "HEALTH_INTELLIGENCE",
+      groupLabel: "Group A · Health Intelligence",
+      order: "04",
+      category: "Alertness & Mood",
+      title: "Cognitive & Behavioral",
+      metric: `5-Trial PVT · ${pvtRecordsCount} Check${pvtRecordsCount !== 1 ? "s" : ""}`,
+      statusText: "● Reaction time & circadian cycle",
+      tone: "sky",
+      description:
+        "Run millisecond PVT reaction checks and maintain private orbital mood logs.",
+      actionLabel: "Open Cognitive Check",
+      icon: Brain,
+      imageSrc: VISUAL_ASSETS.cognitive,
+      imageAlt: "Astronaut crew workstation with circadian lighting",
+    },
+
+    // Group B — Help & Safety
     {
       page: "medical-help",
-      group: "SAFETY",
-      order: "01",
+      group: "HELP_SAFETY",
+      groupLabel: "Group B · Help & Safety",
+      order: "05",
       category: "First-Response Aid",
       title: "Medical Help & Triage",
       metric:
@@ -220,14 +337,15 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
     },
     {
       page: "life-safety",
-      group: "SAFETY",
-      order: "02",
+      group: "HELP_SAFETY",
+      groupLabel: "Group B · Help & Safety",
+      order: "06",
       category: "Crew Protection",
       title: "Life-Safety Sentinel",
       metric:
         sentinelSummary && sentinelSummary.openEventsCount > 0
           ? `${sentinelSummary.openEventsCount} Active Safety Event`
-          : `Env: ${sentinelSummary?.envLevel || "NORMAL"}`,
+          : `Priority: ${sentinelTierLabel}`,
       statusText: sentinelSummary?.checkinOverdue
         ? "▲ Scheduled check-in overdue"
         : "● Check-in & emergency watch active",
@@ -243,9 +361,32 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
       imageAlt: "Spacecraft cabin life-safety pressure and oxygen sentinel panel",
     },
     {
+      page: "alerts-response",
+      group: "HELP_SAFETY",
+      groupLabel: "Group B · Help & Safety",
+      order: "07",
+      category: "Alert Handling",
+      title: "Alerts & Response",
+      metric: activeIncident ? activeIncident.title : "No Active Alerts",
+      statusText:
+        activeIncident && activeIncident.state !== "CLOSED_RETAINED"
+          ? `▲ Step: ${activeIncident.state.replace(/_/g, " ").toLowerCase()}`
+          : "● All incidents reviewed or closed",
+      tone: activeIncident && activeIncident.state !== "CLOSED_RETAINED" ? "amber" : "emerald",
+      description:
+        "View 7-part plain-English alert evidence, checklists, and recovery trends.",
+      actionLabel: "Open Alerts",
+      icon: AlertTriangle,
+      imageSrc: VISUAL_ASSETS.cardVitals,
+      imageAlt: "Astronaut health console displaying baseline alert thresholds",
+    },
+
+    // Group C — Crew & Continuity
+    {
       page: "continuity",
-      group: "SAFETY",
-      order: "03",
+      group: "CREW_CONTINUITY",
+      groupLabel: "Group C · Crew & Continuity",
+      order: "08",
       category: "Earth-Independent Ops",
       title: "Continuity Mode",
       metric:
@@ -266,152 +407,31 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
       imageSrc: VISUAL_ASSETS.continuityMode,
       imageAlt: "Spacecraft continuity workstation displaying offline checklists",
     },
-
-    // Group 2: Health, Vitals & Shift Operations
-    {
-      page: "live-vitals",
-      group: "HEALTH",
-      order: "04",
-      category: "Continuous Sensors",
-      title: "Live Vitals & Quality Filter",
-      metric: hrComp
-        ? `${hrComp.current_value.toFixed(0)} bpm · ${spo2Comp ? spo2Comp.current_value.toFixed(1) : "—"}% SpO2`
-        : "8 Live Channels",
-      statusText:
-        isolatedCount > 0
-          ? `▲ ${validCount} valid · ${isolatedCount} isolated`
-          : `● ${validCount} valid sensor readings`,
-      tone: isolatedCount > 0 ? "amber" : "emerald",
-      description:
-        "Inspect live 8-channel charts, last-known-good values, and sensor quality flags.",
-      actionLabel: "Open Live Vitals",
-      icon: Activity,
-      imageSrc: VISUAL_ASSETS.liveVitals,
-      imageAlt: "Astronaut biometric chest monitor and pulse oximeter",
-    },
-    {
-      page: "daily-checkin",
-      group: "HEALTH",
-      order: "05",
-      category: "Crew Input & Scans",
-      title: "Daily Check-In",
-      metric: sleepComp
-        ? `${sleepComp.current_value.toFixed(1)}h sleep · ${hydrationComp ? hydrationComp.current_value.toFixed(0) : "—"} mL`
-        : "10 Daily Inputs",
-      statusText:
-        outsideCount > 0
-          ? `▲ ${outsideCount} channel${outsideCount > 1 ? "s" : ""} outside baseline`
-          : `● ${presentCount}/${ALL_18_PARAMETERS.length} channels verified`,
-      tone: outsideCount > 0 || telemetryIncomplete ? "amber" : "emerald",
-      description:
-        "Log quick self-report, sleep, hydration, glucose, voice memos, and scans.",
-      actionLabel: "Open Check-In",
-      icon: ClipboardCheck,
-      imageSrc: VISUAL_ASSETS.dailyCheckin,
-      imageAlt: "Portable ultrasound probe, thermometer, and glucose meter",
-    },
-    {
-      page: "alerts-response",
-      group: "HEALTH",
-      order: "06",
-      category: "Evidence & Recovery",
-      title: "Alerts & Response",
-      metric: activeIncident ? activeIncident.title : "No Active Alerts",
-      statusText:
-        activeIncident && activeIncident.state !== "CLOSED_RETAINED"
-          ? `▲ Step: ${activeIncident.state.replace(/_/g, " ").toLowerCase()}`
-          : "● All incidents reviewed or closed",
-      tone: activeIncident && activeIncident.state !== "CLOSED_RETAINED" ? "amber" : "emerald",
-      description:
-        "View 7-part plain-English alert evidence, checklists, and recovery trends.",
-      actionLabel: "Open Alerts",
-      icon: AlertTriangle,
-      imageSrc: VISUAL_ASSETS.cardVitals,
-      imageAlt: "Astronaut health console displaying baseline alert thresholds",
-    },
     {
       page: "shift-routine",
-      group: "HEALTH",
-      order: "07",
-      category: "Handover & Routine",
+      group: "CREW_CONTINUITY",
+      groupLabel: "Group C · Crew & Continuity",
+      order: "09",
+      category: "Handover & Walkthroughs",
       title: "Shift, Routine & Scenarios",
       metric: `${completedTasksCount}/${MISSION_ROUTINE_TASKS.length} Routine · ${routineState.streakDays}d Streak`,
       statusText:
         outstandingTasksCount > 0
           ? `▲ ${outstandingTasksCount} paused task${outstandingTasksCount > 1 ? "s" : ""} to resume`
-          : `● ${envMeta.shortLabel} · Handover ready`,
+          : `● ${envMeta.shortLabel} · Handover & 6-scene demo ready`,
       tone: outstandingTasksCount > 0 ? "amber" : "sky",
       description:
-        "Full shift handover board, daily countermeasure streaks, and mission scenarios.",
+        "Full shift handover board, countermeasure streaks, and 6-scene mission demo.",
       actionLabel: "Open Shift & Routine",
       icon: CalendarCheck2,
       imageSrc: VISUAL_ASSETS.shiftRoutine,
       imageAlt: "Astronaut digital shift handover logbook and hydration pack",
     },
     {
-      page: "cabin-radiation",
-      group: "HEALTH",
-      order: "08",
-      category: "Habitat Environment",
-      title: "Cabin Air & Radiation",
-      metric: co2Comp
-        ? `${co2Comp.current_value.toFixed(2)} mmHg CO2 · ${radComp ? radComp.current_value.toFixed(3) : "—"} mSv/hr`
-        : "CO2, Pressure & O2",
-      statusText:
-        co2Comp?.outside_p05_p95_band || radComp?.outside_p05_p95_band
-          ? "▲ Above normal cabin band"
-          : "● Cabin pressure & air nominal",
-      tone:
-        co2Comp?.outside_p05_p95_band || radComp?.outside_p05_p95_band ? "amber" : "emerald",
-      description:
-        "Monitor CO2, cabin pressure, oxygen supply, smoke sensors, and radiation.",
-      actionLabel: "Open Cabin & Air",
-      icon: Wind,
-      imageSrc: VISUAL_ASSETS.cabinEclss,
-      imageAlt: "Space station air-scrubber life support module",
-    },
-    {
-      page: "reports-library",
-      group: "HEALTH",
-      order: "09",
-      category: "Base Sync & Guides",
-      title: "Base Reports & Library",
-      metric: `${consultationQueue.length} Saved Report${consultationQueue.length !== 1 ? "s" : ""}`,
-      statusText: earthWanConnected
-        ? pendingReports > 0
-          ? `● Link online · ${pendingReports} waiting`
-          : "● Link online · Queue clear"
-        : "▲ Earth offline · Queued locally",
-      tone: earthWanConnected ? "emerald" : "amber",
-      description:
-        "Send Flight Surgeon reports, export JSON/Markdown, and search NASA/CSA guides.",
-      actionLabel: "Open Reports & Library",
-      icon: FileText,
-      imageSrc: VISUAL_ASSETS.cardEarth,
-      imageAlt: "Earth horizon seen from sunlit spacecraft cabin",
-    },
-
-    // Group 3: Crew Readiness & Records
-    {
-      page: "body-map",
-      group: "CREW",
-      order: "10",
-      category: "Anatomy & Hazards",
-      title: "Body Map & 5 Hazards",
-      metric: "7 Body Systems · 5 Hazards",
-      statusText: "● Interactive organ health guide",
-      tone: "sky",
-      description:
-        "Tap body regions to inspect organ baselines, hazards, and protective actions.",
-      actionLabel: "Open Body Map",
-      icon: Stethoscope,
-      imageSrc: VISUAL_ASSETS.bodyAtlas,
-      imageAlt: "Medical tablet displaying translucent astronaut anatomy",
-    },
-    {
       page: "eva-readiness",
-      group: "CREW",
-      order: "11",
+      group: "CREW_CONTINUITY",
+      groupLabel: "Group C · Crew & Continuity",
+      order: "10",
       category: "Spacewalk Airlock",
       title: "EVA & Suit Readiness",
       metric: `45m Pre-Breathe · ${evaLogsCount} Log${evaLogsCount !== 1 ? "s" : ""}`,
@@ -426,8 +446,9 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
     },
     {
       page: "med-kit",
-      group: "CREW",
-      order: "12",
+      group: "CREW_CONTINUITY",
+      groupLabel: "Group C · Crew & Continuity",
+      order: "11",
       category: "Crew Pharmacy",
       title: "Med Kit & Supplies",
       metric: `${medRecordsCount} Tracked Suppl${medRecordsCount !== 1 ? "ies" : "y"}`,
@@ -440,28 +461,53 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
       imageSrc: VISUAL_ASSETS.medKit,
       imageAlt: "Organized orbital medical kit with vials and cuffs",
     },
+
+    // Group D — Evidence & Research
     {
-      page: "cognitive-readiness",
-      group: "CREW",
+      page: "reports-library",
+      group: "EVIDENCE_RESEARCH",
+      groupLabel: "Group D · Evidence & Research",
+      order: "12",
+      category: "Base Sync & Research",
+      title: "Base Reports & Library",
+      metric: `${consultationQueue.length} Saved Report${consultationQueue.length !== 1 ? "s" : ""}`,
+      statusText: earthWanConnected
+        ? pendingReports > 0
+          ? `● Link online · ${pendingReports} waiting`
+          : "● Link online · Queue clear"
+        : "▲ Earth offline · Queued locally",
+      tone: earthWanConnected ? "emerald" : "amber",
+      description:
+        "Send Flight Surgeon reports, export JSON/Markdown, and search NASA/CSA literature.",
+      actionLabel: "Open Reports & Library",
+      icon: FileText,
+      imageSrc: VISUAL_ASSETS.cardEarth,
+      imageAlt: "Earth horizon seen from sunlit spacecraft cabin",
+    },
+    {
+      page: "body-map",
+      group: "EVIDENCE_RESEARCH",
+      groupLabel: "Group D · Evidence & Research",
       order: "13",
-      category: "Alertness & Mood",
-      title: "Cognitive & Behavioral",
-      metric: `5-Trial PVT · ${pvtRecordsCount} Check${pvtRecordsCount !== 1 ? "s" : ""}`,
-      statusText: "● Reaction time & circadian cycle",
+      category: "Anatomy & Hazards",
+      title: "Body Map & 5 Hazards",
+      metric: "7 Body Systems · 5 Hazards",
+      statusText: "● Interactive organ health guide",
       tone: "sky",
       description:
-        "Run millisecond PVT reaction checks and maintain private orbital mood logs.",
-      actionLabel: "Open Cognitive Check",
-      icon: Brain,
-      imageSrc: VISUAL_ASSETS.cognitive,
-      imageAlt: "Astronaut crew workstation with circadian lighting",
+        "Tap body regions to inspect organ baselines, hazards, and protective actions.",
+      actionLabel: "Open Body Map",
+      icon: Stethoscope,
+      imageSrc: VISUAL_ASSETS.bodyAtlas,
+      imageAlt: "Medical tablet displaying translucent astronaut anatomy",
     },
     {
       page: "storage-history",
-      group: "CREW",
+      group: "EVIDENCE_RESEARCH",
+      groupLabel: "Group D · Evidence & Research",
       order: "14",
-      category: "Private Cloud Memory",
-      title: "Cloud Storage & Sync",
+      category: "Audit & Private Cloud",
+      title: "Cloud Storage & History",
       metric: `${totalStoredRecords} Records · ${snapshotCount} Snapshots`,
       statusText:
         offlineQueueCount > 0
@@ -471,7 +517,7 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
           : "▲ Offline IndexedDB queue",
       tone: offlineQueueCount > 0 || !browserOnline ? "amber" : "sky",
       description:
-        "Manage profile & role access, export backups, and flush offline sync queue.",
+        "Inspect SHA-256 audit history, manage role access, export backups, and sync offline writes.",
       actionLabel: "Open Cloud Storage",
       icon: Database,
       imageSrc: VISUAL_ASSETS.heroOrbital,
@@ -484,102 +530,214 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
 
   return (
     <div className="space-y-5">
-      {/* Compact Mission Header + Urgent Medical Actions + Visual */}
-      <section className="glass-panel rounded-2xl p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-        <div className="lg:col-span-8 space-y-3.5">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-            <span className="font-semibold text-sky-900">{missionName}</span>
-            <span aria-hidden="true">·</span>
-            <span className="font-medium text-slate-900">
-              {astronautName} ({activeCrew?.role || operatorRole.replace(/_/g, " ")})
-            </span>
-            <span aria-hidden="true">·</span>
-            <span
-              className={`font-semibold ${
-                overallStatus.tone === "emerald" ? "text-emerald-800" : "text-amber-800"
-              }`}
-            >
-              {overallStatus.tone === "emerald" ? "● " : "▲ "}
-              {overallStatus.label}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="font-mono text-[11px]">
-              Earth: {earthWanConnected ? "ON" : "OFF"} ·{" "}
-              {browserOnline ? "Cloud Online" : "Offline Queue"}
-            </span>
+      {/* Compact Deep-Navy Mission Command Header */}
+      <section className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#070E1E] via-[#0B162E] to-[#102140] border border-slate-800 text-slate-100 p-5 sm:p-6 shadow-lg">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="space-y-1">
+              <div className="font-mono text-[11px] font-semibold tracking-wider text-cyan-300 uppercase">
+                MISSION COMMAND WORKSPACE · {envMeta.shortLabel}
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                AEGIS-V Operational Dashboard
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+                When Earth is far away, every decision matters. Launch immediate medical aid, monitor
+                cabin &amp; crew status, or open any specialized tool below.
+              </p>
+            </div>
+
+            {/* 8 Real-State Mission Status Indicators */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div className="rounded-xl bg-slate-900/80 border border-slate-800 px-3 py-2">
+                <div className="text-slate-400">Mission / Habitat</div>
+                <div className="font-semibold text-white truncate mt-0.5">{missionName}</div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 border border-slate-800 px-3 py-2">
+                <div className="text-slate-400">Active Crew &amp; Role</div>
+                <div className="font-semibold text-white truncate mt-0.5">
+                  {astronautName} ({activeCrew?.role || operatorRole.replace(/_/g, " ")})
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 border border-slate-800 px-3 py-2">
+                <div className="text-slate-400">Monitoring &amp; Alerts</div>
+                <div
+                  className={`font-semibold truncate mt-0.5 ${
+                    overallStatus.tone === "rose"
+                      ? "text-rose-300"
+                      : overallStatus.tone === "amber"
+                      ? "text-amber-300"
+                      : "text-emerald-300"
+                  }`}
+                >
+                  {overallStatus.label} · {openIncidents.length} Open
+                </div>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 border border-slate-800 px-3 py-2">
+                <div className="text-slate-400">Sentinel · Earth · Sync</div>
+                <div className="font-mono font-semibold text-cyan-200 truncate mt-0.5 tabular-nums">
+                  {sentinelTierLabel} · {earthWanConnected ? "WAN ON" : "WAN OFF"} ·{" "}
+                  {offlineQueueCount > 0 ? `${offlineQueueCount} Q` : browserOnline ? "Synced" : "Local"}
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Primary Action Controls */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenMedicalHelp ? onOpenMedicalHelp(false) : onNavigate("medical-help")
+                }
+                className="min-h-[42px] px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <HeartPulse className="w-4 h-4 shrink-0" />
+                <span>I NEED MEDICAL HELP</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenMedicalHelp ? onOpenMedicalHelp(true) : onNavigate("medical-help")
+                }
+                className="min-h-[42px] px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>URGENT EMERGENCY</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigate("life-safety")}
+                className="min-h-[42px] px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-100 inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Shield className="w-3.5 h-3.5 text-cyan-300" />
+                <span>OPEN LIFE-SAFETY SENTINEL</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigate("shift-routine")}
+                className="min-h-[42px] px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-100 inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <CalendarCheck2 className="w-3.5 h-3.5 text-cyan-300" />
+                <span>SHIFT HANDOVER</span>
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              AEGIS-V Crew Workspace
-            </h1>
-            <p className="text-sm text-slate-600">
-              Tap any card below to open a clean, dedicated page for that tool—or start urgent
-              medical guidance right away.
-            </p>
+          <div className="lg:col-span-4 space-y-2">
+            <div className="aspect-[16/9] rounded-xl overflow-hidden border border-slate-700/80">
+              <SafeImage
+                src={envHeroImage}
+                alt={envMeta.label}
+                caption={`${envMeta.shortLabel} · ${envMeta.gravityLabel}`}
+              />
+            </div>
+            <div className="text-[11px] font-mono text-slate-400 text-right tabular-nums">
+              Last Sync / Obs: {formatMissionTimeUtc(latestObservationIso)}
+            </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-            <button
-              type="button"
-              onClick={() =>
-                onOpenMedicalHelp ? onOpenMedicalHelp(false) : onNavigate("medical-help")
-              }
-              className="min-h-[42px] px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer shadow-xs"
-            >
-              <HeartPulse className="w-4 h-4 text-rose-300 shrink-0" />
-              <span>I NEED MEDICAL HELP</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                onOpenMedicalHelp ? onOpenMedicalHelp(true) : onNavigate("medical-help")
-              }
-              className="min-h-[42px] px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer shadow-xs"
-            >
-              <ShieldAlert className="w-4 h-4 shrink-0" />
-              <span>URGENT EMERGENCY</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate("shift-routine")}
-              className="min-h-[42px] px-3.5 py-2 rounded-xl bg-white/85 hover:bg-white border border-slate-200 text-xs font-semibold text-slate-800 inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <CalendarCheck2 className="w-3.5 h-3.5 text-sky-700" />
-              <span>Shift Handover &amp; Scenarios</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onStartTour}
-              className="min-h-[42px] px-3.5 py-2 rounded-xl bg-sky-50/90 hover:bg-sky-100 border border-sky-200 text-xs font-semibold text-sky-900 inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Compass className="w-3.5 h-3.5 text-sky-700" />
-              <span>Tour</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 aspect-[16/9] rounded-xl overflow-hidden border border-slate-200/80">
-          <SafeImage
-            src={envHeroImage}
-            alt={envMeta.label}
-            caption={`${envMeta.shortLabel} · ${envMeta.gravityLabel}`}
-          />
         </div>
       </section>
 
-      {/* Clean Ordered Category Filter Strip */}
+      {/* Above-the-Fold Priority Situation Summary Strip */}
+      <section
+        aria-label="Mission Priority Summary"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs"
+      >
+        <button
+          type="button"
+          onClick={() => onNavigate("life-safety")}
+          className="glass-panel rounded-xl p-3.5 text-left hover:bg-white/90 transition-colors cursor-pointer space-y-1"
+        >
+          <div className="font-mono text-[10px] font-semibold uppercase text-slate-500">
+            Life-Safety &amp; Air · {sentinelTierLabel}
+          </div>
+          <div className="font-bold text-slate-900 truncate">
+            Env: {sentinelSummary?.envLevel || "NORMAL"} ·{" "}
+            {co2Comp ? `${co2Comp.current_value.toFixed(2)} mmHg CO2` : "CO2 Nominal"}
+          </div>
+          <div className="text-[11px] text-sky-800 font-medium">
+            {sentinelSummary?.checkinOverdue ? "▲ Check-in overdue — review" : "● Open Sentinel →"}
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("alerts-response")}
+          className="glass-panel rounded-xl p-3.5 text-left hover:bg-white/90 transition-colors cursor-pointer space-y-1"
+        >
+          <div className="font-mono text-[10px] font-semibold uppercase text-slate-500">
+            Health &amp; Active Alerts
+          </div>
+          <div className="font-bold text-slate-900 truncate">
+            {openIncidents.length > 0
+              ? `${openIncidents.length} Open: ${activeIncident?.title || "Inspect Alert"}`
+              : `${presentCount}/${ALL_18_PARAMETERS.length} Channels Valid`}
+          </div>
+          <div className="text-[11px] text-sky-800 font-medium">
+            {openIncidents.length > 0 ? "Inspect 7-Part Evidence →" : "All Baselines Clear →"}
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate("continuity")}
+          className="glass-panel rounded-xl p-3.5 text-left hover:bg-white/90 transition-colors cursor-pointer space-y-1"
+        >
+          <div className="font-mono text-[10px] font-semibold uppercase text-slate-500">
+            Continuity &amp; Equipment
+          </div>
+          <div className="font-bold text-slate-900 truncate">
+            {earthWanConnected ? "Earth Link On · Ready" : "Earth Link Off · Autonomous"}
+          </div>
+          <div className="text-[11px] text-sky-800 font-medium">
+            {medRecordsCount} Med Supplies · Continuity Board →
+          </div>
+        </button>
+
+        <div className="glass-panel rounded-xl p-3.5 flex flex-col justify-between gap-2">
+          <div>
+            <div className="font-mono text-[10px] font-semibold uppercase text-slate-500">
+              Guided Walkthrough &amp; 6-Scene Story
+            </div>
+            <div className="font-bold text-slate-900 mt-0.5 truncate">
+              {outstandingTasksCount > 0
+                ? `${outstandingTasksCount} Paused Task to Resume`
+                : "Interactive 6-Stage Judge Story"}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onStartTour}
+              className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+            >
+              <Compass className="w-3 h-3" />
+              <span>Interactive Tour</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("shift-routine")}
+              className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 rounded-lg text-[11px] font-semibold cursor-pointer"
+            >
+              6-Scene Demo →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Ordered 4-Group Module Filter Strip */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
-              { id: "ALL", label: `All Tools (${cards.length})` },
-              { id: "SAFETY", label: "Help & Safety (3)" },
-              { id: "HEALTH", label: "Health & Shift (6)" },
-              { id: "CREW", label: "Crew & Storage (5)" },
+              { id: "ALL", label: `All Modules (${cards.length})` },
+              { id: "HEALTH_INTELLIGENCE", label: "A · Health Intelligence (4)" },
+              { id: "HELP_SAFETY", label: "B · Help & Safety (3)" },
+              { id: "CREW_CONTINUITY", label: "C · Crew & Continuity (4)" },
+              { id: "EVIDENCE_RESEARCH", label: "D · Evidence & Research (3)" },
             ] as Array<{ id: CardGroupFilter; label: string }>
           ).map((tab) => {
             const active = groupFilter === tab.id;
@@ -591,7 +749,7 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                   active
                     ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white/80 text-slate-700 border-slate-200/90 hover:bg-white"
+                    : "bg-white/85 text-slate-700 border-slate-200/90 hover:bg-white"
                 }`}
               >
                 {tab.label}
@@ -601,7 +759,7 @@ export const HomeDashboardPage: React.FC<HomeDashboardPageProps> = ({
         </div>
 
         <span className="text-xs text-slate-500">
-          Every card opens a fresh, dedicated workspace page.
+          Prototype workspace · Each card opens a dedicated screen.
         </span>
       </div>
 

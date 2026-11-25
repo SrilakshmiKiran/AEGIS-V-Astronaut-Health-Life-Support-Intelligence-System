@@ -116,7 +116,7 @@ export const AlertsResponsePage: React.FC<AlertsResponsePageProps> = ({
   const [closureNotes, setClosureNotes] = useState(
     "Readings moved back toward normal personal baseline; alert closed and saved."
   );
-  const [cmoPin, setCmoPin] = useState("2026");
+  const [cmoPin, setCmoPin] = useState("");
   const [includeSimulatedFollowup, setIncludeSimulatedFollowup] = useState(false);
   const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -574,7 +574,7 @@ export const AlertsResponsePage: React.FC<AlertsResponsePageProps> = ({
               <p className="leading-relaxed">{String(reasoningBlock.formula_evaluated || "")}</p>
             </div>
             <p className="text-[11px] text-amber-900 bg-amber-50/85 border border-amber-200/80 rounded-xl px-3 py-2">
-              {exp.prototype_disclaimer || PROTOTYPE_DISCLAIMER}
+              Prototype demonstration logic — not a validated clinical threshold or medical diagnosis.
             </p>
           </section>
 
@@ -727,7 +727,7 @@ export const AlertsResponsePage: React.FC<AlertsResponsePageProps> = ({
                     ? "Designated CMO is marked unavailable. "
                     : ""}
                   Non-CMO crew can confirm evidence review (Step 1), evaluate follow-up, and log
-                  crew-permitted procedures, while CMO + PIN (2026) steps (Steps 2, 3, and 4
+                  crew-permitted procedures, while CMO + PIN authorization steps (Steps 2, 3, and 4
                   closure) remain locked without impersonation.
                 </p>
                 {onOpenContinuity && (
@@ -767,7 +767,7 @@ export const AlertsResponsePage: React.FC<AlertsResponsePageProps> = ({
                       <KeyRound className="w-3.5 h-3.5 text-sky-700" />
                       <span>CMO Authorization PIN (Prototype Gate)</span>
                     </label>
-                    <span className="text-[11px] font-mono text-slate-500">Demo PIN: 2026</span>
+                    <span className="text-[11px] font-mono text-slate-500">CMO Verification</span>
                   </div>
                   <input
                     id="cmo-auth-pin"
@@ -775,7 +775,7 @@ export const AlertsResponsePage: React.FC<AlertsResponsePageProps> = ({
                     value={cmoPin}
                     disabled={!canAuthorizeCmo || isBusy}
                     onChange={(e) => setCmoPin(e.target.value)}
-                    placeholder="Enter CMO PIN (2026)"
+                    placeholder="Enter CMO authorization PIN"
                     className="w-full bg-white/85 border border-slate-300/80 rounded-xl px-2.5 py-1.5 font-mono text-slate-900 disabled:opacity-50"
                   />
                   <p className="text-[11px] text-slate-500">
@@ -1210,7 +1210,8 @@ export const AlertsResponsePage: React.FC<AlertsResponsePageProps> = ({
                       </div>
                       <p className="text-slate-600">{trend.summary_text}</p>
                       <p className="text-[11px] text-slate-500 italic">
-                        {trend.non_causal_disclaimer}
+                        Reports observed post-action direction only; does not establish causation or
+                        treatment effectiveness.
                       </p>
                     </div>
                   );

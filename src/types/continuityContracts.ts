@@ -185,7 +185,7 @@ export const SIMULATED_CREW_CAPABILITIES: Record<string, CrewCapabilityProfile> 
       "Log daily observations, check-ins, checklist steps, and prepare Earth handoff package",
     ],
     restrictedTasks: [
-      "Cannot impersonate Crew Medical Officer or bypass CMO+PIN (2026) authorization",
+      "Cannot impersonate Crew Medical Officer or bypass CMO+PIN authorization",
       "Cannot authorize CMO-controlled pharmaceuticals (e.g., Modafinil) or invasive procedures",
       "Cannot issue medical diagnosis or close CMO-gated clinical incidents",
     ],
@@ -690,7 +690,7 @@ export const GUIDED_PROCEDURES: GuidedProcedure[] = [
         stepNumber: 1,
         title: "Verify CMO Credential & PIN Authorization",
         instruction:
-          "Confirm active operator is designated Crew Medical Officer with valid CMO PIN (2026).",
+          "Confirm active operator is designated Crew Medical Officer with verified CMO PIN authorization.",
         verificationCue: "Requires CREW_MEDICAL_OFFICER role and CMO availability.",
       },
       {

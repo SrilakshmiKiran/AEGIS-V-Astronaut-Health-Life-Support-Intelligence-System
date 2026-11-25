@@ -20,7 +20,7 @@ export const OperatorRoleSwitcher: React.FC<OperatorRoleSwitcherProps> = ({
       onChange({
         actorId: "CMO-DR-PATEL",
         actorRole: "CREW_MEDICAL_OFFICER",
-        authPin: operator.authPin || "2026",
+        authPin: operator.authPin,
       });
     } else if (val === "CREW_MEMBER") {
       onChange({
@@ -76,11 +76,11 @@ export const OperatorRoleSwitcher: React.FC<OperatorRoleSwitcherProps> = ({
         <input
           id="aegis-cmo-pin"
           aria-label="CMO Authentication PIN"
-          type="text"
+          type="password"
           value={operator.authPin}
           onChange={(e) => onChange({ ...operator, authPin: e.target.value })}
-          placeholder="2026"
-          className="w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500"
+          placeholder="PIN"
+          className="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500"
         />
       </div>
     </div>

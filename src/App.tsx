@@ -2454,11 +2454,22 @@ export default function App() {
   }
 
   const effectivePage: PageId = !user ? "landing" : activePage;
+  const isLandingChrome = effectivePage === "landing";
 
   return (
-    <div className="min-h-screen text-slate-900 flex flex-col">
-      {/* Clean 3-Zone Frosted Glass Top Navigation Bar */}
-      <header className="glass-header px-4 lg:px-8 py-3.5 sticky top-0 z-30">
+    <div
+      className={`min-h-screen flex flex-col ${
+        isLandingChrome ? "bg-[#060B18] text-slate-100" : "text-slate-900"
+      }`}
+    >
+      {/* Clean 3-Zone Top Navigation Bar */}
+      <header
+        className={`px-4 lg:px-8 py-3.5 sticky top-0 z-30 ${
+          isLandingChrome
+            ? "bg-[#060B18]/90 backdrop-blur-xl border-b border-slate-800/80 text-slate-100"
+            : "glass-header"
+        }`}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
           {/* Zone 1: Single-Element Brand Wordmark (Always navigates to Page 1 Showcase) */}
           <div className="flex items-center gap-3 shrink-0">
@@ -2467,7 +2478,11 @@ export default function App() {
                 type="button"
                 aria-label="Toggle Menu"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-1.5 text-slate-700 hover:text-slate-900 rounded-lg border border-slate-200/80 bg-white/60 cursor-pointer"
+                className={`md:hidden p-1.5 rounded-lg border cursor-pointer ${
+                  isLandingChrome
+                    ? "text-slate-200 border-slate-700 bg-slate-900/80"
+                    : "text-slate-700 hover:text-slate-900 border-slate-200/80 bg-white/60"
+                }`}
               >
                 {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
@@ -2475,7 +2490,11 @@ export default function App() {
             <button
               type="button"
               onClick={() => navigateTo("landing")}
-              className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight text-slate-900 hover:text-sky-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className={`inline-flex items-center gap-2.5 text-lg font-bold tracking-tight transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                isLandingChrome
+                  ? "text-white hover:text-cyan-300"
+                  : "text-slate-900 hover:text-sky-800"
+              }`}
             >
               <AegisBrandIcon className="w-8 h-8 shrink-0 drop-shadow-xs" />
               <span>AEGIS-V</span>
@@ -2493,14 +2512,22 @@ export default function App() {
                     type="button"
                     onClick={() => navigateTo(item.id)}
                     className={`text-sm font-medium transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer ${
-                      isActive
+                      isLandingChrome
+                        ? isActive
+                          ? "text-cyan-300 border-cyan-400"
+                          : "text-slate-300 border-transparent hover:text-white"
+                        : isActive
                         ? "text-slate-900 border-sky-600"
                         : "text-slate-600 border-transparent hover:text-slate-900"
                     }`}
                   >
                     <span>{item.label}</span>
                     {item.id === "alerts-response" && activeAlertCount > 0 && (
-                      <span className="ml-1 font-mono text-xs font-semibold text-amber-700">
+                      <span
+                        className={`ml-1 font-mono text-xs font-semibold ${
+                          isLandingChrome ? "text-amber-300" : "text-amber-700"
+                        }`}
+                      >
                         ({activeAlertCount})
                       </span>
                     )}
@@ -2509,16 +2536,28 @@ export default function App() {
               })}
             </nav>
           ) : (
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
               <a
-                href="#capabilities"
-                className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+                href="#how-it-works"
+                className="hover:text-white transition-colors whitespace-nowrap shrink-0"
               >
                 How It Works
               </a>
               <a
+                href="#capabilities"
+                className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+              >
+                Core Pillars
+              </a>
+              <a
+                href="#preview"
+                className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+              >
+                Product Preview
+              </a>
+              <a
                 href="#privacy"
-                className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+                className="hover:text-white transition-colors whitespace-nowrap shrink-0"
               >
                 Private Storage
               </a>
@@ -2531,7 +2570,11 @@ export default function App() {
               <button
                 type="button"
                 onClick={signOutUser}
-                className="px-3.5 py-2 text-xs font-medium text-slate-800 hover:text-slate-950 bg-white/75 hover:bg-white border border-slate-200/80 rounded-xl transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+                className={`px-3.5 py-2 text-xs font-medium rounded-xl transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer border ${
+                  isLandingChrome
+                    ? "text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border-slate-700"
+                    : "text-slate-800 hover:text-slate-950 bg-white/75 hover:bg-white border-slate-200/80"
+                }`}
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out</span>
@@ -2541,9 +2584,9 @@ export default function App() {
                 type="button"
                 disabled={isSigningIn}
                 onClick={signInWithGoogle}
-                className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-60 rounded-xl transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 disabled:opacity-60 rounded-xl transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
-                {isSigningIn ? "Signing in..." : "Sign in with Google"}
+                {isSigningIn ? "Signing in..." : "Enter Mission Workspace"}
               </button>
             )}
           </div>
@@ -2562,6 +2605,8 @@ export default function App() {
                   className={`text-left px-3 py-2 rounded-xl text-sm font-medium cursor-pointer ${
                     isActive
                       ? "bg-sky-100/80 text-sky-950"
+                      : isLandingChrome
+                      ? "text-slate-200 hover:bg-slate-800"
                       : "text-slate-700 hover:bg-white/70"
                   }`}
                 >
@@ -2577,7 +2622,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 lg:px-8 py-6 lg:py-8">
+      <main className={`flex-1 px-4 lg:px-8 py-6 lg:py-8 ${user ? "pb-24" : ""}`}>
         <div className="max-w-7xl mx-auto">
           {effectivePage === "landing" && (
             <LandingPage
@@ -3020,14 +3065,24 @@ export default function App() {
       </main>
 
       {/* Quiet Footer */}
-      <footer className="glass-header border-t border-slate-200/60 border-b-0 px-4 lg:px-8 pt-4 pb-20 sm:pb-16 text-xs text-slate-600 mt-auto">
+      <footer
+        className={`border-t px-4 lg:px-8 pt-4 pb-20 sm:pb-16 text-xs mt-auto ${
+          isLandingChrome
+            ? "bg-[#050914] border-slate-800 text-slate-400"
+            : "glass-header border-slate-200/60 border-b-0 text-slate-600"
+        }`}
+      >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-2 font-medium text-slate-700">
+          <span
+            className={`inline-flex items-center gap-2 font-medium ${
+              isLandingChrome ? "text-slate-200" : "text-slate-700"
+            }`}
+          >
             <AegisBrandIcon className="w-5 h-5 shrink-0" />
             <span>AEGIS-V Private Crew Health Workspace</span>
           </span>
           <span>
-            Research &amp; decision-support prototype — not a clinical medical device.
+            Prototype demonstration logic — not a validated clinical threshold or medical diagnosis.
           </span>
         </div>
       </footer>
